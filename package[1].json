@@ -1,0 +1,77 @@
+{
+  "name": "sistema-gimnasio",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de cuotas para gimnasios",
+  "main": "electron-main.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir",
+    "serve": "http-server . -p 8080 -o",
+    "capacitor-init": "npx cap init",
+    "capacitor-add-android": "npx cap add android",
+    "capacitor-add-ios": "npx cap add ios",
+    "capacitor-sync": "npx cap sync",
+    "capacitor-build": "npx cap build",
+    "android": "npx cap run android",
+    "ios": "npx cap run ios"
+  },
+  "build": {
+    "appId": "com.gimnasio.sistema",
+    "productName": "Sistema de Gimnasio",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "app.js",
+      "electron-main.js",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "keywords": [
+    "gimnasio",
+    "gestión",
+    "cuotas",
+    "electron",
+    "desktop"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "@capacitor/cli": "^5.5.1",
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "@capacitor/core": "^5.5.1",
+    "@capacitor/android": "^5.5.1",
+    "@capacitor/ios": "^5.5.1"
+  }
+}
