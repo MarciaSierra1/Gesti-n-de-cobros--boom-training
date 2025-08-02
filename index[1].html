@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gimnasio - Gestión de Cuotas</title>
+    <meta name="description" content="Sistema para controlar el cobro de cuotas del gimnasio">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Sistema Gimnasio">
+    
+    <!-- Iconos para diferentes dispositivos -->
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
+</head>
+<body>
+    <div class="min-h-screen bg-background">
+        <main class="min-h-screen bg-background">
+            <div class="container mx-auto p-4 space-y-6">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold">Sistema de Gimnasio</h1>
+                        <p class="text-muted-foreground">Gestión de cuotas y alumnos</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="configBtn" class="btn btn-secondary">Configuración</button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Total Alumnos</div>
+                            <div class="indicator bg-blue-500"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number" id="totalStudents">0</div>
+                            <div class="stat-subtitle" id="studentTypes">0 personalizado, 0 clásico</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Pagos al Día</div>
+                            <div class="indicator bg-green-500"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number" id="paidStudents">0</div>
+                            <div class="stat-subtitle" id="paidPercentage">0.0% del total</div>
+                            <div class="progress-bar">
+                                <div class="progress-indicator" id="paidProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Pagos Vencidos</div>
+                            <div class="indicator bg-red-500"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number text-red-600" id="overdueStudents">0</div>
+                            <div class="stat-subtitle" id="overduePercentage">0.0% del total</div>
+                            <div class="progress-bar">
+                                <div class="progress-indicator" id="overdueProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Ingresos</div>
+                            <div class="indicator bg-yellow-500"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number text-green-600" id="totalIncome">$ 0</div>
+                            <div class="stat-subtitle">
+                                <span class="text-red-600" id="pendingIncome">$0 pendiente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <div class="tab-list">
+                        <button class="tab-trigger active" data-tab="students">
+                            Estudiantes
+                            <span class="badge" id="studentsBadge">0</span>
+                        </button>
+                        <button class="tab-trigger" data-tab="reminders">Recordatorios</button>
+                        <button class="tab-trigger" data-tab="add">Agregar Alumno</button>
+                    </div>
+
+                    <!-- Students Tab -->
+                    <div class="tab-content active" id="students-tab">
+                        <div class="card">
+                            <div class="card-content empty-state" id="studentsContent">
+                                <div class="text-center space-y-2">
+                                    <h3 class="text-lg font-semibold">No hay alumnos registrados</h3>
+                                    <p class="text-muted-foreground">Comienza agregando tu primer alumno al sistema</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reminders Tab -->
+                    <div class="tab-content" id="reminders-tab">
+                        <div class="card">
+                            <div class="card-content">
+                                <h3>Recordatorios de Pagos</h3>
+                                <div id="remindersList">
+                                    <p class="text-muted-foreground">No hay recordatorios pendientes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Student Tab -->
+                    <div class="tab-content" id="add-tab">
+                        <div class="card">
+                            <div class="card-content">
+                                <h3>Agregar Nuevo Alumno</h3>
+                                <form id="addStudentForm" class="space-y-4">
+                                    <div class="form-group">
+                                        <label for="studentName">Nombre completo</label>
+                                        <input type="text" id="studentName" name="name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="studentEmail">Email</label>
+                                        <input type="email" id="studentEmail" name="email">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="studentPhone">Teléfono</label>
+                                        <input type="tel" id="studentPhone" name="phone">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="membershipType">Tipo de membresía</label>
+                                        <select id="membershipType" name="membershipType" required>
+                                            <option value="">Seleccionar tipo</option>
+                                            <option value="clasico">Clásico</option>
+                                            <option value="personalizado">Personalizado</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="monthlyFee">Cuota mensual ($)</label>
+                                        <input type="number" id="monthlyFee" name="monthlyFee" min="0" step="0.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="startDate">Fecha de inicio</label>
+                                        <input type="date" id="startDate" name="startDate" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Agregar Alumno</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Configuration Modal -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configuración del Sistema</h2>
+                <button id="closeModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="gymName">Nombre del Gimnasio</label>
+                    <input type="text" id="gymName" placeholder="Mi Gimnasio">
+                </div>
+                <div class="form-group">
+                    <label for="currency">Moneda</label>
+                    <select id="currency">
+                        <option value="$">Peso ($)</option>
+                        <option value="USD">Dólar (USD)</option>
+                        <option value="€">Euro (€)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reminderDays">Días de recordatorio antes del vencimiento</label>
+                    <input type="number" id="reminderDays" value="3" min="1" max="30">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveConfig" class="btn btn-primary">Guardar</button>
+                <button id="cancelConfig" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
