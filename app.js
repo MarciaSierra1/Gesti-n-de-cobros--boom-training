@@ -39,6 +39,40 @@ class GymManagement {
             this.addStudent();
         });
 
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            this.searchTerm = e.target.value.toLowerCase();
+            this.renderStudents();
+        });
+
+        // Overdue filter toggle
+        document.getElementById('overdueFilter').addEventListener('click', () => {
+            this.showOnlyOverdue = !this.showOnlyOverdue;
+            this.showOnlyCritical = false; // Reset critical filter
+            document.getElementById('overdueFilter').textContent = 
+                this.showOnlyOverdue ? 'Mostrar Todos' : 'Solo Vencidos';
+            document.getElementById('criticalFilter').textContent = 'Muy Vencidos';
+            this.renderStudents();
+        });
+
+        // Critical overdue filter toggle (>1 month)
+        document.getElementById('criticalFilter').addEventListener('click', () => {
+            this.showOnlyCritical = !this.showOnlyCritical;
+            this.showOnlyOverdue = false; // Reset overdue filter
+            document.getElementById('criticalFilter').textContent = 
+                this.showOnlyCritical ? 'Mostrar Todos' : 'Muy Vencidos';
+            document.getElementById('overdueFilter').textContent = 'Solo Vencidos';
+            this.renderStudents();
+        });
+
+        // Membership type change - auto price
+        const membershipSelect = document.getElementById('membershipType');
+        if (membershipSelect) {
+            membershipSelect.addEventListener('change', (e) => {
+                this.updatePriceByMembership(e.target.value);
+            });
+        }
+
         // Configuration modal
         document.getElementById('configBtn').addEventListener('click', () => {
             this.openConfigModal();
@@ -62,33 +96,14 @@ class GymManagement {
                 this.closeConfigModal();
             }
         });
+    }
 
-        // Overdue filter toggle
-        document.getElementById('overdueFilter').addEventListener('click', () => {
-            this.showOnlyOverdue = !this.showOnlyOverdue;
-            this.showOnlyCritical = false; // Reset critical filter
-            document.getElementById('overdueFilter').textContent = 
-                this.showOnlyOverdue ? 'Mostrar Todos' : 'Solo Vencidos';
-            document.getElementById('criticalFilter').textContent = 'Muy Vencidos';
-            this.renderStudents();
-        });
-
-        // Critical overdue filter toggle (>1 month)
-        document.getElementById('criticalFilter').addEventListener('click', () => {
-            this.showOnlyCritical = !this.showOnlyCritical;
-            this.showOnlyOverdue = false; // Reset overdue filter
-            document.getElementById('criticalFilter').textContent = 
-                this.showOnlyCritical ? 'Mostrar Todos' : 'Muy Vencidos';
-            document.getElementById('overdueFilter').textContent = 'Solo Vencidos';
-            this.renderStudents();
-        });
-
-        // Membership type change event
-        document.getElementById('membershipType').addEventListener('change', (e) => {
-            const selectedType = e.target.value;
-            const price = this.config.prices[selectedType];
-            document.getElementById('monthlyFee').value = price;
-        });
+    updatePriceByMembership(membershipType) {
+        const priceInput = document.getElementById('monthlyFee');
+        if (priceInput && this.config.prices[membershipType]) {
+            priceInput.value = this.config.prices[membershipType];
+            console.log(`Precio actualizado a: ${this.config.prices[membershipType]} para ${membershipType}`);
+        }
     }
 
     switchTab(tabName) {
@@ -366,13 +381,19 @@ class GymManagement {
         document.getElementById('gymName').value = this.config.gymName;
         document.getElementById('currency').value = this.config.currency;
         document.getElementById('reminderDays').value = this.config.reminderDays;
+        document.getElementById('personalizadoPrice').value = this.config.prices.personalizado;
+        document.getElementById('clasicoPrice').value = this.config.prices.clasico;
     }
 
     saveConfig() {
         this.config = {
             gymName: document.getElementById('gymName').value,
             currency: document.getElementById('currency').value,
-            reminderDays: parseInt(document.getElementById('reminderDays').value)
+            reminderDays: parseInt(document.getElementById('reminderDays').value),
+            prices: {
+                personalizado: parseFloat(document.getElementById('personalizadoPrice').value) || 50000,
+                clasico: parseFloat(document.getElementById('clasicoPrice').value) || 30000
+            }
         };
         
         localStorage.setItem('gymConfig', JSON.stringify(this.config));
