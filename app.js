@@ -82,6 +82,13 @@ class GymManagement {
             document.getElementById('overdueFilter').textContent = 'Solo Vencidos';
             this.renderStudents();
         });
+
+        // Membership type change event
+        document.getElementById('membershipType').addEventListener('change', (e) => {
+            const selectedType = e.target.value;
+            const price = this.config.prices[selectedType];
+            document.getElementById('monthlyFee').value = price;
+        });
     }
 
     switchTab(tabName) {
@@ -109,6 +116,7 @@ class GymManagement {
             phone: formData.get('phone'),
             membershipType: formData.get('membershipType'),
             monthlyFee: parseFloat(formData.get('monthlyFee')),
+            monthsOwed: formData.get('monthsOwed') || '',
             startDate: formData.get('startDate'),
             lastPayment: null,
             status: 'pending'
@@ -247,19 +255,18 @@ class GymManagement {
             if (status === 'paid') {
                 statusClass = 'status-paid';
                 statusText = 'Al día';
-            } else if (status === 'overdue') {
+            } else {
+                // Both overdue and critical show as "Vencido" but with days
                 statusClass = 'status-overdue';
                 statusText = `Vencido (${daysSincePayment} días)`;
-            } else if (status === 'critical') {
-                statusClass = 'status-critical';
-                statusText = `Muy Vencido (${daysSincePayment} días)`;
             }
             
             return `
-                <div class="student-item ${status}">
+                <div class="student-item ${status === 'paid' ? 'paid' : 'overdue'}">
                     <div class="student-info">
                         <h4>${student.name}</h4>
                         <p>Membresía: ${student.membershipType} - ${this.config.currency}${student.monthlyFee}/mes</p>
+                        ${student.monthsOwed ? `<p><strong>Meses adeudados:</strong> ${student.monthsOwed}</p>` : ''}
                         <p>Email: ${student.email || 'No especificado'}</p>
                         <p>Teléfono: ${student.phone || 'No especificado'}</p>
                         <p>Inicio: ${new Date(student.startDate).toLocaleDateString()}</p>
@@ -326,6 +333,7 @@ class GymManagement {
             document.getElementById('studentPhone').value = student.phone || '';
             document.getElementById('membershipType').value = student.membershipType;
             document.getElementById('monthlyFee').value = student.monthlyFee;
+            document.getElementById('monthsOwed').value = student.monthsOwed || '';
             document.getElementById('startDate').value = student.startDate;
             
             // Remove student and switch to add tab
