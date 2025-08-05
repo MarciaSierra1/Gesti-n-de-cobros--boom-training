@@ -1,16 +1,23 @@
-// Gym Management System - JavaScript
+/ Gym Management System - JavaScript
 class GymManagement {
     constructor() {
         this.students = JSON.parse(localStorage.getItem('gymStudents')) || [];
-        this.config = JSON.parse(localStorage.getItem('gymConfig')) || {
-            gymName: 'Mi Gimnasio',
-            currency: '$',
-            reminderDays: 3,
+        
+        // Load config with safe defaults
+        const savedConfig = JSON.parse(localStorage.getItem('gymConfig')) || {};
+        this.config = {
+            gymName: savedConfig.gymName || 'Mi Gimnasio',
+            currency: savedConfig.currency || '$',
+            reminderDays: savedConfig.reminderDays || 3,
             prices: {
-                personalizado: 50000,
-                clasico: 30000
+                personalizado: (savedConfig.prices && savedConfig.prices.personalizado) || 50000,
+                clasico: (savedConfig.prices && savedConfig.prices.clasico) || 30000
             }
         };
+        
+        // Save the corrected config back to localStorage
+        localStorage.setItem('gymConfig', JSON.stringify(this.config));
+        
         this.searchTerm = '';
         this.showOnlyOverdue = false;
         this.showOnlyCritical = false;
@@ -533,4 +540,3 @@ document.addEventListener('keydown', (e) => {
         gymApp.closeConfigModal();
     }
 });
-
