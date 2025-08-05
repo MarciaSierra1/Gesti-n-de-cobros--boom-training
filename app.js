@@ -5,8 +5,15 @@ class GymManagement {
         this.config = JSON.parse(localStorage.getItem('gymConfig')) || {
             gymName: 'Mi Gimnasio',
             currency: '$',
-            reminderDays: 3
+            reminderDays: 3,
+            prices: {
+                personalizado: 50000,
+                clasico: 30000
+            }
         };
+        this.searchTerm = '';
+        this.showOnlyOverdue = false;
+        this.showOnlyCritical = false;
         
         this.init();
     }
@@ -54,6 +61,26 @@ class GymManagement {
             if (e.target.id === 'configModal') {
                 this.closeConfigModal();
             }
+        });
+
+        // Overdue filter toggle
+        document.getElementById('overdueFilter').addEventListener('click', () => {
+            this.showOnlyOverdue = !this.showOnlyOverdue;
+            this.showOnlyCritical = false; // Reset critical filter
+            document.getElementById('overdueFilter').textContent = 
+                this.showOnlyOverdue ? 'Mostrar Todos' : 'Solo Vencidos';
+            document.getElementById('criticalFilter').textContent = 'Muy Vencidos';
+            this.renderStudents();
+        });
+
+        // Critical overdue filter toggle (>1 month)
+        document.getElementById('criticalFilter').addEventListener('click', () => {
+            this.showOnlyCritical = !this.showOnlyCritical;
+            this.showOnlyOverdue = false; // Reset overdue filter
+            document.getElementById('criticalFilter').textContent = 
+                this.showOnlyCritical ? 'Mostrar Todos' : 'Muy Vencidos';
+            document.getElementById('overdueFilter').textContent = 'Solo Vencidos';
+            this.renderStudents();
         });
     }
 
@@ -118,39 +145,93 @@ class GymManagement {
             if (!student.lastPayment) return true;
             const lastPayment = new Date(student.lastPayment);
             const daysDiff = Math.floor((currentDate - lastPayment) / (1000 * 60 * 60 * 24));
-            return daysDiff > 30;
+            return daysDiff > 30 && daysDiff <= 60;
+        });
+
+        const criticalStudents = this.students.filter(student => {
+            if (!student.lastPayment) {
+                const startDate = new Date(student.startDate);
+                const daysSinceStart = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+                return daysSinceStart > 60;
+            }
+            const lastPayment = new Date(student.lastPayment);
+            const daysDiff = Math.floor((currentDate - lastPayment) / (1000 * 60 * 60 * 24));
+            return daysDiff > 60;
         });
 
         const totalIncome = paidStudents.reduce((sum, student) => sum + student.monthlyFee, 0);
-        const pendingIncome = overdueStudents.reduce((sum, student) => sum + student.monthlyFee, 0);
+        const pendingIncome = (overdueStudents.length + criticalStudents.length) > 0 ? 
+            [...overdueStudents, ...criticalStudents].reduce((sum, student) => sum + student.monthlyFee, 0) : 0;
 
         // Update DOM
         document.getElementById('totalStudents').textContent = total;
         document.getElementById('studentTypes').textContent = `${personalizado} personalizado, ${clasico} clásico`;
         document.getElementById('paidStudents').textContent = paidStudents.length;
         document.getElementById('paidPercentage').textContent = total > 0 ? `${((paidStudents.length / total) * 100).toFixed(1)}% del total` : '0.0% del total';
-        document.getElementById('overdueStudents').textContent = overdueStudents.length;
-        document.getElementById('overduePercentage').textContent = total > 0 ? `${((overdueStudents.length / total) * 100).toFixed(1)}% del total` : '0.0% del total';
+        document.getElementById('overdueStudents').textContent = overdueStudents.length + criticalStudents.length;
+        document.getElementById('overduePercentage').textContent = total > 0 ? `${(((overdueStudents.length + criticalStudents.length) / total) * 100).toFixed(1)}% del total` : '0.0% del total';
         document.getElementById('totalIncome').textContent = `${this.config.currency} ${totalIncome.toFixed(2)}`;
         document.getElementById('pendingIncome').textContent = `${this.config.currency}${pendingIncome.toFixed(2)} pendiente`;
         document.getElementById('studentsBadge').textContent = total;
 
         // Update progress bars
         const paidProgress = total > 0 ? (paidStudents.length / total) * 100 : 0;
-        const overdueProgress = total > 0 ? (overdueStudents.length / total) * 100 : 0;
+        const overdueProgress = total > 0 ? ((overdueStudents.length + criticalStudents.length) / total) * 100 : 0;
         
         document.getElementById('paidProgress').style.width = `${paidProgress}%`;
         document.getElementById('overdueProgress').style.width = `${overdueProgress}%`;
+
+        // Update filter button badges
+        const overdueBtn = document.getElementById('overdueFilter');
+        const criticalBtn = document.getElementById('criticalFilter');
+        
+        if (overdueStudents.length > 0) {
+            overdueBtn.setAttribute('data-count', overdueStudents.length);
+        } else {
+            overdueBtn.removeAttribute('data-count');
+        }
+        
+        if (criticalStudents.length > 0) {
+            criticalBtn.setAttribute('data-count', criticalStudents.length);
+        } else {
+            criticalBtn.removeAttribute('data-count');
+        }
     }
 
     renderStudents() {
         const container = document.getElementById('studentsContent');
         
-        if (this.students.length === 0) {
+        // Filter students based on search and overdue filter
+        let filteredStudents = this.students.filter(student => {
+            const matchesSearch = student.name.toLowerCase().includes(this.searchTerm);
+            const status = this.getStudentStatus(student);
+            
+            if (this.showOnlyOverdue) {
+                return matchesSearch && status === 'overdue';
+            }
+            if (this.showOnlyCritical) {
+                return matchesSearch && status === 'critical';
+            }
+            return matchesSearch;
+        });
+
+        // Sort alphabetically by name
+        filteredStudents.sort((a, b) => a.name.localeCompare(b.name));
+        
+        if (filteredStudents.length === 0) {
+            let message = 'No hay alumnos registrados';
+            if (this.searchTerm) {
+                message = 'No se encontraron alumnos que coincidan con la búsqueda';
+            } else if (this.showOnlyOverdue) {
+                message = 'No hay pagos vencidos (1-2 meses)';
+            } else if (this.showOnlyCritical) {
+                message = 'No hay pagos muy vencidos (+2 meses)';
+            }
+            
             container.innerHTML = `
                 <div class="text-center space-y-2">
-                    <h3 class="text-lg font-semibold">No hay alumnos registrados</h3>
-                    <p class="text-muted-foreground">Comienza agregando tu primer alumno al sistema</p>
+                    <h3 class="text-lg font-semibold">${message}</h3>
+                    <p class="text-muted-foreground">${this.searchTerm || this.showOnlyOverdue || this.showOnlyCritical ? 'Intenta cambiar los filtros' : 'Comienza agregando tu primer alumno al sistema'}</p>
                 </div>
             `;
             container.className = 'card-content empty-state';
@@ -158,19 +239,31 @@ class GymManagement {
         }
 
         container.className = 'card-content';
-        container.innerHTML = this.students.map(student => {
+        container.innerHTML = filteredStudents.map(student => {
             const status = this.getStudentStatus(student);
-            const statusClass = status === 'paid' ? 'status-paid' : 'status-overdue';
-            const statusText = status === 'paid' ? 'Al día' : 'Vencido';
+            const daysSincePayment = this.getDaysSinceLastPayment(student);
+            
+            let statusClass, statusText;
+            if (status === 'paid') {
+                statusClass = 'status-paid';
+                statusText = 'Al día';
+            } else if (status === 'overdue') {
+                statusClass = 'status-overdue';
+                statusText = `Vencido (${daysSincePayment} días)`;
+            } else if (status === 'critical') {
+                statusClass = 'status-critical';
+                statusText = `Muy Vencido (${daysSincePayment} días)`;
+            }
             
             return `
-                <div class="student-item">
+                <div class="student-item ${status}">
                     <div class="student-info">
                         <h4>${student.name}</h4>
                         <p>Membresía: ${student.membershipType} - ${this.config.currency}${student.monthlyFee}/mes</p>
                         <p>Email: ${student.email || 'No especificado'}</p>
                         <p>Teléfono: ${student.phone || 'No especificado'}</p>
                         <p>Inicio: ${new Date(student.startDate).toLocaleDateString()}</p>
+                        ${student.lastPayment ? `<p>Último pago: ${new Date(student.lastPayment).toLocaleDateString()}</p>` : '<p>Sin pagos registrados</p>'}
                     </div>
                     <div class="student-status">
                         <span class="status-badge ${statusClass}">${statusText}</span>
@@ -192,13 +285,24 @@ class GymManagement {
     }
 
     getStudentStatus(student) {
-        if (!student.lastPayment) return 'overdue';
+        const daysSincePayment = this.getDaysSinceLastPayment(student);
         
+        if (daysSincePayment <= 30) return 'paid';
+        if (daysSincePayment <= 60) return 'overdue';
+        return 'critical';
+    }
+
+    getDaysSinceLastPayment(student) {
         const currentDate = new Date();
-        const lastPayment = new Date(student.lastPayment);
-        const daysDiff = Math.floor((currentDate - lastPayment) / (1000 * 60 * 60 * 24));
         
-        return daysDiff <= 30 ? 'paid' : 'overdue';
+        if (!student.lastPayment) {
+            // If no payment recorded, calculate from start date
+            const startDate = new Date(student.startDate);
+            return Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+        }
+        
+        const lastPayment = new Date(student.lastPayment);
+        return Math.floor((currentDate - lastPayment) / (1000 * 60 * 60 * 24));
     }
 
     markPayment(studentId) {
@@ -400,3 +504,4 @@ document.addEventListener('keydown', (e) => {
         gymApp.closeConfigModal();
     }
 });
+
