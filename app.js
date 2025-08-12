@@ -1,4 +1,4 @@
-/ Gym Management System - JavaScript
+// Gym Management System - JavaScript
 class GymManagement {
     constructor() {
         this.students = JSON.parse(localStorage.getItem('gymStudents')) || [];
@@ -233,7 +233,14 @@ class GymManagement {
         
         // Filter students based on search and overdue filter
         let filteredStudents = this.students.filter(student => {
-            const matchesSearch = student.name.toLowerCase().includes(this.searchTerm);
+            // Búsqueda mejorada: nombre completo, nombre, apellido, email y teléfono
+            const searchableText = [
+                student.name || '',
+                student.email || '',
+                student.phone || ''
+            ].join(' ').toLowerCase();
+            
+            const matchesSearch = this.searchTerm === '' || searchableText.includes(this.searchTerm);
             const status = this.getStudentStatus(student);
             
             if (this.showOnlyOverdue) {
