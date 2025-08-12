@@ -10,11 +10,31 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #f8fafc;
+    /* Mejoras para móvil */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Scroll suave para móvil */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* Mejoras para touch en móvil */
+button, .btn, .tab-trigger {
+    min-height: 44px; /* Tamaño mínimo recomendado para touch */
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Layout */
 .min-h-screen {
     min-height: 100vh;
+    min-height: 100dvh; /* Mejor soporte para móvil */
 }
 
 .bg-background {
